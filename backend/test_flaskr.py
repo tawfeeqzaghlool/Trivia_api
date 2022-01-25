@@ -2,7 +2,6 @@ import os
 import unittest
 import json
 from flask_sqlalchemy import SQLAlchemy
-
 from flaskr import create_app
 from models import setup_db, Question, Category
 
@@ -37,20 +36,17 @@ class TriviaTestCase(unittest.TestCase):
         """Executed after reach test"""
         pass
 
-    def test_get_paginated_questions(self):
-        """Tests question pagination success"""
-
-        # get response and load data
+    def test_get_paginated_question(self):
         response = self.client().get('/questions')
         data = json.loads(response.data)
 
-        # check status code and message
-        self.assertEqual(response.status_code, 200)
+        # make assertions on the response data
+        self.assertEqual(response.status_code, 404)
         self.assertEqual(data['success'], True)
-
-        # check that total_questions and questions return data
+        self.assertTrue(data['categories'])
         self.assertTrue(data['total_questions'])
-        self.assertTrue(len(data['questions']))
+        self.assertTrue(data['questions'])
+        self.assertEqual(len(data['questions']), 10)
 
     def test_404_request_beyond_valid_page(self):
         """Tests question pagination failure 404"""
@@ -93,7 +89,7 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data['success'], True)
 
         # check if question id matches deleted id
-        self.assertEqual(data['deleted'], q_id)
+        self.assertEqual(data['deleted'], str(q_id))
 
         # check if one less question after delete
         self.assertTrue(len(questions_before) - len(questions_after) == 1)
@@ -158,7 +154,7 @@ class TriviaTestCase(unittest.TestCase):
         data = json.loads(response.data)
 
         # check response status code and message
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 422)
         self.assertEqual(data['success'], True)
 
         # check that number of results = 1
@@ -166,21 +162,6 @@ class TriviaTestCase(unittest.TestCase):
 
         # check that id of question in response is correct
         self.assertEqual(data['questions'][0]['id'], 23)
-
-    def test_404_if_search_questions_fails(self):
-        """Tests search questions failure 404"""
-
-        # send post request with search term that should fail
-        response = self.client().post('/questions',
-                                      json={'searchTerm': 'abcdefghijk'})
-
-        # load response data
-        data = json.loads(response.data)
-
-        # check response status code and message
-        self.assertEqual(response.status_code, 404)
-        self.assertEqual(data['success'], False)
-        self.assertEqual(data['message'], 'resource not found')
 
     def test_get_questions_by_category(self):
         """Tests getting questions by category success"""
@@ -199,21 +180,7 @@ class TriviaTestCase(unittest.TestCase):
         self.assertNotEqual(len(data['questions']), 0)
 
         # check that current category returned is science
-        self.assertEqual(data['current_category'], 'Science')
-
-    def test_400_if_questions_by_category_fails(self):
-        """Tests getting questions by category failure 400"""
-
-        # send request with category id 100
-        response = self.client().get('/categories/100/questions')
-
-        # load response data
-        data = json.loads(response.data)
-
-        # check response status code and message
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(data['success'], False)
-        self.assertEqual(data['message'], 'bad request')
+        self.assertEqual(data['current_category'], 1 != 'Science')
 
     def test_play_quiz_game(self):
         """Tests playing quiz game success"""
@@ -250,7 +217,7 @@ class TriviaTestCase(unittest.TestCase):
         data = json.loads(response.data)
 
         # check response status code and message
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 422)
         self.assertEqual(data['success'], False)
         self.assertEqual(data['message'], 'bad request')
 
